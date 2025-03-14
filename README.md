@@ -13,11 +13,15 @@ col PROFILE for a30
 col version form a40
 col description form a85
 col action_date form a20
+set pagesize 4000
+SET SERVEROUTPUT OFF;
+SET ECHO OFF
+SET PAUSE OFF;
 
 
 
 
-prompt ---database---
+prompt database
 
 SELECT sys_context('USERENV','DB_NAME') AS Database_Name FROM dual;
 
@@ -26,7 +30,7 @@ select distinct profile from dba_profiles ;
 
 
 
-prompt ---Create profile APPUSER
+prompt Create profile APPUSER
 
 SET SERVEROUTPUT ON;
 DECLARE
@@ -59,7 +63,7 @@ end;
 
 
 
-prompt ---Create profile DBAUSERS
+prompt Create profile DBAUSERS
 
 
 SET SERVEROUTPUT ON;
@@ -93,7 +97,7 @@ EXCEPTION
 end;
 /
 
-prompt ---Create profile USR_CONSULTA
+prompt Create profile USR_CONSULTA
 
 
 SET SERVEROUTPUT ON;
@@ -128,7 +132,7 @@ end;
 /
 
 
-prompt ---creacion de profile APPUSER y asignacion de usuarios.
+prompt creacion de profile APPUSER y asignacion de usuarios.
 
 
 
@@ -169,7 +173,7 @@ END;
 
 exec SYS.PROFILE_USERS_APPUSER;
 
-prompt ---listado de usuarios aplicativos.
+prompt listado de usuarios aplicativos.
 
 set linesize 300
 col username for a20
