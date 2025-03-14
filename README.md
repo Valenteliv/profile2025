@@ -185,4 +185,52 @@ AND username NOT IN ('RMANADMIN', 'INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPC
 
 
 
+prompt creacion de profile USR_CONSULTA y asignacion de usuarios.
+
+
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE username  LIKE '%USR%';
+
+
+
+CREATE OR REPLACE PROCEDURE SYS.PROFILE_USERS_USR
+IS
+    TYPE user_profile_rec IS RECORD (
+        username VARCHAR2(128),
+        profile  VARCHAR2(128) 
+    );
+    v_cursor sys_refcursor := NULL;
+    v_rec    user_profile_rec;
+BEGIN
+    OPEN v_cursor FOR
+      SELECT username, profile
+     FROM dba_users
+     WHERE username  LIKE '%USR%';
+    LOOP
+        FETCH v_cursor INTO v_rec;
+        EXIT WHEN v_cursor%NOTFOUND;
+        EXECUTE IMMEDIATE 'ALTER USER ' || v_rec.username || ' PROFILE APPUSER';
+    END LOOP;
+    CLOSE v_cursor;
+END;
+/
+
+
+exec SYS.PROFILE_USERS_USR;
+
+prompt listado de usuarios aplicativos.
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE username  LIKE '%USR%';
+
+
+
+
 
