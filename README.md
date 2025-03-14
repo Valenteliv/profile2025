@@ -8,6 +8,7 @@ $ORACLE_HOME/bin/sqlplus -S / as sysdba << EOF! > ${LOG}/PROFILE_${ORACLE_SID}_$
 spool Auditoria.txt
 set echo on
 set linesize 300
+set pagesize 300
 col PROFILE for a30
 col version form a40
 col description form a85
