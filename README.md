@@ -51,7 +51,7 @@ BEGIN
          PASSWORD_LIFE_TIME UNLIMITED
          PASSWORD_REUSE_TIME UNLIMITED
          PASSWORD_REUSE_MAX UNLIMITED
-         PASSWORD_VERIFY_FUNCTION "NULL"
+         PASSWORD_VERIFY_FUNCTION NULL
          PASSWORD_LOCK_TIME UNLIMITED
          PASSWORD_GRACE_TIME UNLIMITED';
     EXECUTE IMMEDIATE ddl_qry;
@@ -130,5 +130,59 @@ EXCEPTION
                  null;
 end;
 /
+
+
+prompt ---creacion de profile APPUSER y asignacion de usuarios.
+
+
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE username NOT LIKE '%USR%'
+AND username NOT LIKE '%CC%'
+AND username NOT IN ('RMANADMIN', 'INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC') AND  ORACLE_MAINTAINED  != 'Y';
+
+
+
+CREATE OR REPLACE PROCEDURE SYS.PROFILE_USERS_APPUSER
+IS
+    TYPE user_profile_rec IS RECORD (
+        username VARCHAR2(128),
+        profile  VARCHAR2(128) 
+    );
+    v_cursor sys_refcursor := NULL;
+    v_rec    user_profile_rec;
+BEGIN
+    OPEN v_cursor FOR
+        SELECT username, profile
+     FROM dba_users
+     WHERE username NOT LIKE '%USR%'
+     AND username NOT LIKE '%CC%'
+     AND username NOT IN ('RMANADMIN', 'INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC') AND  ORACLE_MAINTAINED  != 'Y';
+    LOOP
+        FETCH v_cursor INTO v_rec;
+        EXIT WHEN v_cursor%NOTFOUND;
+        EXECUTE IMMEDIATE 'ALTER USER ' || v_rec.username || ' PROFILE APPUSER';
+    END LOOP;
+    CLOSE v_cursor;
+END;
+/
+
+
+exec SYS.PROFILE_USERS_APPUSER;
+
+prompt ---listado de usuarios aplicativos.
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE username NOT LIKE '%USR%'
+AND username NOT LIKE '%CC%'
+AND username NOT IN ('RMANADMIN', 'INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC') AND  ORACLE_MAINTAINED  != 'Y';
+
+
 
 
