@@ -24,12 +24,6 @@ SELECT sys_context('USERENV','DB_NAME') AS Database_Name FROM dual;
 
 select distinct profile from dba_profiles ;
 
-prompt ---Profiles before
-
-select * from dba_profiles where profile in  ('DEFAULT','ADMUSERS','PRODUSERS') order by profile asc;
-
-prompt ---Begin creation--
-
 
 
 prompt ---Create profile APPUSER
