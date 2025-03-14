@@ -3,7 +3,7 @@
 FECHA=`date +%d%m%y%H%M`; export FECHA
 LOG=`pwd`; export LOG
 
-$ORACLE_HOME/bin/sqlplus / as sysdba << EOF! > ${LOG}/PROFILE_${ORACLE_SID}_${FECHA}.log
+$ORACLE_HOME/bin/sqlplus -S / as sysdba << EOF! > ${LOG}/PROFILE_${ORACLE_SID}_${FECHA}.log
 
 spool Auditoria.txt
 set echo on
