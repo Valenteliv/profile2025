@@ -61,3 +61,77 @@ ALTER SYSTEM SET SEC_RETURN_SERVER_RELEASE_BANNER = FALSE SCOPE = SPFILE;
 alter system set sql92_security = TRUE scope = spfile;
 alter system set ""_trace_files_public"" = FALSE scope= spfile;
 alter system set resource_limit = TRUE scope = both;
+
+
+
+prompt estadisticas semanales
+
+create or replace procedure pr_schema_stats is  
+begin
+ for c in (  
+           select u.username,
+                 row_number() over (order by u.username) as rn
+            from dba_users u
+           where oracle_maintained='N'
+           )
+ loop
+  begin
+    dbms_stats.gather_schema_stats(c.username,degree => 8, cascade => TRUE,NO_INVALIDATE => FALSE, METHOD_OPT => 'FOR ALL COLUMNS SIZE 1');    
+   exception when others then
+    dbms_output.put_line(sqlerrm);
+  end;
+ end loop;
+end;
+/
+
+
+
+BEGIN
+    -- Job defined entirely by the CREATE JOB procedure.
+    DBMS_SCHEDULER.create_job ( job_name => 'ESTADISTICAS_DBA',
+    job_type => 'PLSQL_BLOCK',
+    job_action => 'BEGIN SYS.pr_schema_stats; END;',
+    start_date => SYSTIMESTAMP,
+    repeat_interval=> 'freq=weekly; byday=sat; byhour=03; byminute=0; bysecond=0;',
+    end_date => NULL,
+    enabled => TRUE,
+    comments => 'Se ejecutara cada sabado');
+END;
+/
+
+
+
+
+BEGIN
+  DBMS_SCHEDULER.RUN_JOB(
+    JOB_NAME            => 'ESTADISTICAS_DBA',
+    USE_CURRENT_SESSION => FALSE);
+END;
+/
+
+prompt validacion de  procesos
+show parameter processes
+
+ALTER SYSTEM SET processes = 12000 SCOPE=SPFILE;
+
+prompt validacion de procesos despues del cambio 
+show parameter processes
+
+prompt  número de snaps del AWR
+
+execute dbms_workload_repository.modify_snapshot_settings (interval => 30,retention => 525600);
+
+
+
+prompt  validar numero de creacion de datafiles
+
+ show parameter db_files
+
+ALTER SYSTEM SET db_files=2000 SCOPE=SPFILE;
+
+prompt  validar numero de creacion de datafiles
+
+ show parameter db_files
+
+
+
