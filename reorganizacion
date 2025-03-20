@@ -70,6 +70,51 @@ END MAIN_MOVE_TABLES_AUTOMATIC;
 /
 
 
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB (
+    job_name        => 'MOVE_TABLES_WEEKLY',
+    job_type        => 'STORED_PROCEDURE',
+    job_action      => 'MAIN_MOVE_TABLES_AUTOMATIC',
+    start_date      => SYSTIMESTAMP, -- Opcional: Especifica la fecha y hora de inicio
+    repeat_interval => 'FREQ=WEEKLY;BYDAY=SAT;', -- Ejecuta cada sábado
+    enabled         => TRUE,
+    comments        => 'Mueve tablas automáticamente cada semana.'
+  );
+END;
+/
+
+
+SELECT job_name, state, next_run_date
+FROM   dba_scheduler_jobs
+WHERE  job_name = 'MOVE_TABLES_WEEKLY';
+
+
+
+Modifica el Trabajo (Opcional):
+SQL
+
+BEGIN
+  DBMS_SCHEDULER.SET_ATTRIBUTE (
+    name      => 'MOVE_TABLES_WEEKLY',
+    attribute => 'repeat_interval',
+    value     => 'FREQ=WEEKLY;BYDAY=SUN;' -- Cambia a domingo
+  );
+END;
+/
+
+
+BEGIN
+  DBMS_SCHEDULER.DISABLE('MOVE_TABLES_WEEKLY');
+END;
+/
+
+-- Habilitar
+BEGIN
+  DBMS_SCHEDULER.ENABLE('MOVE_TABLES_WEEKLY');
+END;
+/
+
+
 
 BEGIN
     MAIN_MOVE_TABLES_AUTOMATIC;
