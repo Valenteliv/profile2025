@@ -1,2 +1,76 @@
 
-prompt database
+CREATE OR REPLACE PROCEDURE MAIN_MOVE_TABLES_AUTOMATIC AS
+    CURSOR table_cursor IS
+        SELECT table_name
+        FROM dba_tables
+        WHERE owner = 'SAPR3'
+          AND num_rows IS NOT NULL
+          AND partitioned = 'NO'
+          AND table_name NOT IN ('/GBTINT/EVCON','/GBTINT/EVENT','/GBTINT/EVHUS','/GBTINT/EVNT_DAT','/GBTINT/EVTIE','/SAPAPO/MATLOC','/SAPAPO/ORDADM_I','/SAPAPO/TSQUEUE','/SAPAPO/TSQUEUE2','/SAPSLL/SWNWLR3','AFKO','AFPO','AFVC','ARFCRSTATE','ARFCSDATA','ARFCSSTATE','AUFK','AUSP','BBP_PDHGP','BDCP2','BGRFC_I_DESTLOCK','BGRFC_I_RUNNABLE','BGRFC_LOCK_TIME','BGRFC_O_RUNNABLE','BGRFC_SRV_CFM','BGRFC_SRV_STATE','BGRFC_UNIT_TIME','BGRFC_UTASK_KEY','BKPF','BSID','CATSDB','DBSTATC','DDXTF','DDXTT','DFKKOP','DPSOB_BP_ACC','DRAW','EDIDC','EKKN','HRP1001','KSSK','LTAK','MARA','MLST','MSEG','NAST','PAYR','QREFTID','QRFC_I_ERR_STATE','QRFC_I_EXE_STATE','QRFC_I_QIN','QRFC_I_QIN_LOCK','QRFC_I_QIN_TOP','QRFC_I_SDATA','QRFC_I_UNIT','QRFC_O_ERR_STATE','QRFC_O_EXE_STATE','QRFC_O_QOUT','QRFC_O_QOUT_TOP',QRFC_O_SDATA','QRFC_O_UNIT','RSBATCHDATA','RSODSACTDATA','SMOEJOBID','SMOFCDBHD','SMOFCMPDAT','SMOFCMPHD','SMOFCMPOBJ','SMOHJOBQ','SMOHMSGQ','SMOHMSGQRE','SMOHSITEQ','SMOHSITEQEX','SMOHSITEQRD','SMW3_BDOC','SRTMP_DATA','SWEQUEUE','SWWWIHEAD','SXMSCLUP','SXMSCLUP2','SXMSCLUR','SXMSCLUR2','SXMSPEMAS','SXMSPEMAS2','SXMSPERRO2','SXMSPERROR','SXMSPHIST','SXMSPHIST2','SXMSPMAST','SXMSPMAST2','SXMSPVERS','SXMSPVERS2','TATAF','TBTCO','TESTDATRNRPART0','TRBAT','TRBAT2','TRFCQDATA','TRFCQIN','TRFCQOUT','TRFCQSTATE','TRFC_I_DEST','TRFC_I_ERR_STATE','TRFC_I_EXE_STATE','TRFC_I_UNIT','TRFC_O_DEST','TRFC_O_EXE_STATE','TRFC_O_SDATA','TRFC_O_UNIT','UPSITX','VEPO','XI_AF_SVC_ID_MAP','XI_IDOC_IN_MSG','XI_IDOC_OUT_MSG')
+          AND (iot_type != 'IOT' OR iot_type IS NULL)
+          AND table_name NOT IN (
+              SELECT table_name
+              FROM dba_tab_columns
+              WHERE data_type IN ('BLOB', 'LOB', 'LONG', 'LONG RAW')
+                AND table_name NOT LIKE '/%'
+                AND owner = 'SAPR3'
+          )
+          AND (ROUND((blocks * (8000 - 23 * ini_trans) * (1 - pct_free / 100) 
+                - (avg_row_len + 1) * num_rows) / 1000000)) > 50
+        ORDER BY (ROUND((blocks * (8000 - 23 * ini_trans) * (1 - pct_free / 100) 
+                - (avg_row_len + 1) * num_rows) / 1000000))
+        FETCH FIRST 2 ROWS ONLY;
+
+    v_compressed VARCHAR2(10);
+
+    -- Procedimiento para escribir en el alert log
+    PROCEDURE write_to_alert_log(p_message VARCHAR2) IS
+    BEGIN
+        DBMS_SYSTEM.KSDWRT(2, p_message);  -- 2: Mensaje en el alert log
+    END write_to_alert_log;
+
+BEGIN
+    FOR tbl IN table_cursor LOOP
+        BEGIN
+            -- Verificar si la tabla está comprimida
+            SELECT compression INTO v_compressed
+            FROM dba_tables
+            WHERE owner = 'SAPR3'
+              AND table_name = tbl.table_name;
+
+            IF v_compressed = 'ENABLED' THEN
+			   
+                write_to_alert_log('Incia proceso infra DBA Moviendo la tabla Descomprimiendo: ' || tbl.table_name);
+                EXECUTE IMMEDIATE 'ALTER TABLE SAPR3.' || tbl.table_name || ' NOCOMPRESS';
+
+                write_to_alert_log('Ejecutando MOVE ONLINE: ' || tbl.table_name);
+                EXECUTE IMMEDIATE 'ALTER TABLE SAPR3.' || tbl.table_name || 
+                                  ' MOVE ONLINE TABLESPACE PSAPS000I UPDATE INDEXES';
+
+                write_to_alert_log('Volviendo a comprimir: ' || tbl.table_name);
+                EXECUTE IMMEDIATE 'ALTER TABLE SAPR3.' || tbl.table_name || ' COMPRESS';
+            ELSE
+                write_to_alert_log('Incia proceso infra DBA Moviendo la tabla no compresa : ' || tbl.table_name);
+                EXECUTE IMMEDIATE 'ALTER TABLE SAPR3.' || tbl.table_name || 
+                                  ' MOVE ONLINE TABLESPACE PSAPS000I UPDATE INDEXES';
+            END IF;
+
+        EXCEPTION
+            WHEN OTHERS THEN
+                write_to_alert_log('Error con la tabla ' || tbl.table_name || ': ' || SQLERRM);
+        END;
+    END LOOP;
+
+    write_to_alert_log('Proceso completado para todas las tablas.');
+END MAIN_MOVE_TABLES_AUTOMATIC;
+/
+
+
+BEGIN
+    MAIN_MOVE_TABLES_AUTOMATIC;
+END;
+/
+
+
+
+
