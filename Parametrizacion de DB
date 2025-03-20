@@ -1,1 +1,27 @@
+# profile2025
+
+FECHA=`date +%d%m%y%H%M`; export FECHA
+LOG=`pwd`; export LOG
+
+$ORACLE_HOME/bin/sqlplus -S / as sysdba << EOF! > ${LOG}/PROFILE_${ORACLE_SID}_${FECHA}.log
+
+spool Auditoria.txt
+set echo on
+set linesize 300
+set pagesize 300
+col PROFILE for a30
+col version form a40
+col description form a85
+col action_date form a20
+set pagesize 4000
+SET SERVEROUTPUT OFF;
+SET ECHO OFF
+SET PAUSE OFF;
+
+
+
+
+prompt database
+
+SELECT sys_context('USERENV','DB_NAME') AS Database_Name FROM dual;
 
