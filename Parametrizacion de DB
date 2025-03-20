@@ -1,4 +1,4 @@
-# profile2025
+# Parametrizacion 
 
 FECHA=`date +%d%m%y%H%M`; export FECHA
 LOG=`pwd`; export LOG
@@ -25,3 +25,39 @@ prompt database
 
 SELECT sys_context('USERENV','DB_NAME') AS Database_Name FROM dual;
 
+
+prompt validacion previa force_logging
+select name,force_logging from v$database;
+
+prompt cambiar force_logging
+alter database force logging;
+
+prompt validacion post force_logging
+select name,force_logging from v$database;
+
+
+prompt Deshabilitar Tareas Automaticas (scheduled jobs)
+EXEC DBMS_AUTO_TASK_ADMIN.DISABLE(client_name=>'sql tuning advisor', operation=>NULL, window_name=>NULL);
+EXEC DBMS_AUTO_TASK_ADMIN.DISABLE(client_name=>'auto space advisor', operation=>NULL, window_name=>NULL);
+EXEC DBMS_AUTO_TASK_ADMIN.DISABLE(client_name=>'auto optimizer stats collection', operation=>NULL, window_name=>NULL);
+
+
+prompt Aplicación de Hardening
+
+alter system set audit_sys_operations = TRUE scope = spfile;
+alter system set audit_trail='DB','EXTENDED' scope=spfile;
+alter system set global_names=FALSE scope=both;
+alter system set O7_DICTIONARY_ACCESSIBILITY=FALSE SCOPE=SPFILE;
+alter system set os_roles = FALSE scope = spfile;
+alter system set remote_login_passwordfile = 'EXCLUSIVE' scope =spfile;
+alter system set remote_os_authent = FALSE scope = spfile;
+alter system set remote_os_roles = FALSE scope = spfile;
+
+ALTER SYSTEM SET sec_case_sensitive_logon=TRUE scope=both;
+alter system set sec_max_failed_login_attempts = 6 scope = spfile;
+alter system set sec_protocol_error_further_action = '(DROP,3)' scope = spfile;
+alter system set sec_protocol_error_trace_action = 'LOG' scope = spfile;
+ALTER SYSTEM SET SEC_RETURN_SERVER_RELEASE_BANNER = FALSE SCOPE = SPFILE;
+alter system set sql92_security = TRUE scope = spfile;
+alter system set ""_trace_files_public"" = FALSE scope= spfile;
+alter system set resource_limit = TRUE scope = both;
