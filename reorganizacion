@@ -101,6 +101,17 @@ BEGIN
   );
 END;
 /
+---------------
+
+BEGIN
+  DBMS_SCHEDULER.SET_ATTRIBUTE (
+    name      => 'MOVE_TABLES_WEEKLY',
+    attribute => 'repeat_interval',
+    value     => 'FREQ=DAILY;BYHOUR=2;BYMINUTE=0;' -- Ejecuta a las 2:00 AM diariamente
+  );
+END;
+/
+
 
 
 BEGIN
