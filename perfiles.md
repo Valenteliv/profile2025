@@ -206,7 +206,7 @@ set linesize 300
 col username for a20
 SELECT username, profile
 FROM dba_users
-WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC')
+WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC','RMANADMIN')
 or username   LIKE '%CC%';
 
 
@@ -254,7 +254,7 @@ BEGIN
     OPEN v_cursor FOR
       SELECT username, profile
      FROM dba_users
-     WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC')
+     WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC','RMANADMIN')
      or username   LIKE '%CC%';
     LOOP
         FETCH v_cursor INTO v_rec;
@@ -271,5 +271,50 @@ set linesize 300
 col username for a20
 SELECT username, profile
 FROM dba_users
-WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC')
+WHERE username IN ('INF_MONTR', 'DBA_SOPRT','DBA_SOPN2','DBA_SOPCC','RMANADMIN')
 or username   LIKE '%CC%';
+
+
+prompt Create profile DEFAULT
+
+prompt listado de usuarios administradores DEFAULT.
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE ORACLE_MAINTAINED  = 'Y';
+
+
+
+CREATE OR REPLACE PROCEDURE SYS.PROFILE_USERS_DEFAULT
+IS
+    TYPE user_profile_rec IS RECORD (
+        username VARCHAR2(128),
+        profile  VARCHAR2(128) 
+    );
+    v_cursor sys_refcursor := NULL;
+    v_rec    user_profile_rec;
+BEGIN
+    OPEN v_cursor FOR
+      SELECT username, profile
+     FROM dba_users
+     WHERE ORACLE_MAINTAINED  = 'Y';
+    LOOP
+        FETCH v_cursor INTO v_rec;
+        EXIT WHEN v_cursor%NOTFOUND;
+        EXECUTE IMMEDIATE 'ALTER USER ' || v_rec.username || ' PROFILE DBAUSERS';
+    END LOOP;
+    CLOSE v_cursor;
+END;
+/
+
+exec SYS.PROFILE_USERS_DEFAULT;
+
+set linesize 300
+col username for a20
+SELECT username, profile
+FROM dba_users
+WHERE ORACLE_MAINTAINED  = 'Y';
+
+
